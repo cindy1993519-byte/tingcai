@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 让iPad以全屏模式打开，隐藏地址栏和文件名 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>🌈 听听猜猜乐 · 动物乐园大冒险</title>
+    <style>
+        :root {
+            --pink: #FF6B8A; --orange: #FF8C42; --yellow: #FFD93D;
+            --green: #6BCB77; --blue: #4D96FF; --purple: #9B59B6; --text: #4A3728;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        body {
+            font-family: 'PingFang SC','Noto Sans SC','Helvetica Neue',sans-serif;
+            background: linear-gradient(160deg, #FFF5EC 0%, #FFEAD6 30%, #FFF0E5 60%, #FFE8D8 100%);
+            display:flex; justify-content:center; align-items:center;
+            padding: calc(10px + var(--safe-top)) 10px calc(10px + var(--safe-bottom)) 10px;
+            color:var(--text); position:relative;
+            -webkit-user-select:none; user-select:none;
+        }
+        .sky-stickers { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+        .floating { position:absolute; font-size:60px; opacity:0.18; animation:floatAround 9s ease-in-out infinite; filter:drop-shadow(0 0 10px rgba(255,180,100,0.4)); }
+        .floating:nth-child(1) { top:5%; left:4%; animation-delay:0s; } .floating:nth-child(2) { top:12%; right:6%; animation-delay:2s; font-size:50px; } .floating:nth-child(3) { bottom:10%; left:8%; animation-delay:4s; font-size:66px; } .floating:nth-child(4) { bottom:18%; right:5%; animation-delay:1s; } .floating:nth-child(5) { top:40%; left:2%; animation-delay:3s; font-size:44px; } .floating:nth-child(6) { top:48%; right:2%; animation-delay:5s; font-size:52px; } .floating:nth-child(7) { top:20%; left:50%; animation-delay:2.5s; font-size:40px; }
+        @keyframes floatAround { 0%,100%{transform:translateY(0) rotate(0deg) scale(1);} 30%{transform:translateY(-25px) rotate(5deg) scale(1.08);} 60%{transform:translateY(15px) rotate(-3deg) scale(0.96);} }
+
+        .app { width:100%; max-width:960px; aspect-ratio:16/9; max-height:calc(94vh - var(--safe-top) - var(--safe-bottom)); display:flex; flex-direction:column; position:relative; z-index:2; overflow:hidden; background:transparent; padding:0; border-radius:32px; }
+        .page { display:flex; flex-direction:column; align-items:center; flex:1; height:100%; position:relative; z-index:3; padding:8px 16px; justify-content:flex-start; gap:6px; }
+        .hidden { display:none !important; }
+
+        /* 首页样式保持不变 */
+        .home-header { display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:100%; }
+        .critter-row { display:flex; align-items:center; justify-content:center; gap:16px; padding:6px 20px; background:rgba(255,255,255,0.5); border-radius:30px; backdrop-filter:blur(6px); border:2px solid rgba(255,255,255,0.7); box-shadow:0 4px 12px rgba(0,0,0,0.04); }
+        .critter { font-size:40px; animation:hop 1s ease-in-out infinite; filter:drop-shadow(0 5px 8px rgba(0,0,0,0.10)); }
+        .critter:nth-child(1) { animation-delay:0s; } .critter:nth-child(2) { animation-delay:0.2s; font-size:34px; } .critter:nth-child(3) { animation-delay:0.4s; }
+        @keyframes hop { 0%,100%{transform:translateY(0);} 35%{transform:translateY(-12px);} 55%{transform:translateY(-4px);} }
+        .main-title { font-size:clamp(28px,4.5vw,42px); font-weight:900; background:linear-gradient(135deg,#FF6B35,#FF8C42,#FFB347,#FFD93D); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:4px; margin:2px 0; filter:drop-shadow(0 3px 5px rgba(255,140,50,0.35)); }
+        .main-sub { font-size:clamp(12px,1.6vw,15px); color:#FF8C42; font-weight:700; background:rgba(255,245,236,0.85); padding:3px 18px; border-radius:16px; border:2px dashed #FFD0A0; backdrop-filter:blur(4px); letter-spacing:1px; }
+        .theme-area { flex:1 1 auto; width:100%; display:flex; align-items:center; justify-content:center; min-height:0; position:relative; }
+        .theme-grid { display:flex; flex-wrap:nowrap; justify-content:space-evenly; align-items:center; width:100%; max-width:700px; gap:6px; }
+        .theme-card { background:rgba(255,255,255,0.8); backdrop-filter:blur(12px); border:3px solid rgba(255,255,255,0.85); border-radius:22px; padding:10px 4px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); box-shadow:0 5px 14px rgba(0,0,0,0.05); position:relative; font-weight:700; font-size:clamp(11px,1.4vw,14px); color:var(--text); text-align:center; flex:0 1 auto; width:calc(20% - 10px); min-width:70px; max-width:130px; }
+        .theme-card:hover { transform:translateY(-3px) scale(1.03); border-color:#FFB347; box-shadow:0 8px 18px rgba(0,0,0,0.08); }
+        .theme-card:active { transform:scale(0.92); border-color:#FFB347; background:rgba(255,252,248,0.95); transition:0.08s; }
+        .theme-card::before { content:''; position:absolute; top:-3px; left:20%; right:20%; height:5px; border-radius:0 0 5px 5px; }
+        .theme-card:nth-child(1)::before{background:#FFB347;} .theme-card:nth-child(2)::before{background:#4D96FF;} .theme-card:nth-child(3)::before{background:#FFD93D;} .theme-card:nth-child(4)::before{background:#FF6B8A;} .theme-card:nth-child(5)::before{background:#6BCB77;}
+        .theme-icon-circle { width:clamp(30px,3.8vw,44px); height:clamp(30px,3.8vw,44px); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:clamp(18px,2.4vw,28px); background:rgba(255,255,255,0.75); box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+        .theme-name { line-height:1.2; font-weight:800; }
+        .theme-count { font-size:clamp(8px,1vw,11px); color:#A1887F; background:rgba(245,240,235,0.65); padding:1px 8px; border-radius:10px; font-weight:600; }
+        .bottom-zone { width:100%; max-width:600px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:0; }
+        .control-bar { width:100%; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:12px; padding:10px 16px; background:radial-gradient(circle at top left, rgba(255,245,236,0.85), rgba(255,230,210,0.78)); backdrop-filter:blur(14px); border-radius:28px; border:2px solid rgba(255,255,255,0.7); box-shadow:0 6px 16px rgba(0,0,0,0.05); }
+        .btn-base { border:none; color:white; font-weight:900; border-radius:26px; letter-spacing:1.5px; cursor:pointer; display:flex; align-items:center; gap:5px; transition:0.2s; white-space:nowrap; -webkit-tap-highlight-color:transparent; box-shadow:0 5px 12px rgba(0,0,0,0.12); border:2px solid rgba(255,255,255,0.5); padding:8px 20px; font-size:clamp(13px,1.5vw,16px); }
+        .btn-base:active { transform:scale(0.9); }
+        .btn-icon { display:inline-block; animation:rocketBob 0.7s infinite alternate; font-size:clamp(16px,1.8vw,22px); }
+        @keyframes rocketBob { 0%{transform:translateY(0) rotate(-4deg);} 100%{transform:translateY(-7px) rotate(6deg);} }
+        .catalog-btn { background:linear-gradient(135deg,#4D96FF,#6BCB77); }
+        .custom-btn { background:linear-gradient(135deg,#9B59B6,#FF6B8A); }
+        .all-btn { background:linear-gradient(135deg,#FF5E35,#FF3D00); font-size:clamp(15px,2vw,19px); padding:10px 28px; letter-spacing:2px; box-shadow:0 7px 18px rgba(255,60,20,0.4); border:2px solid rgba(255,255,255,0.6); position:relative; }
+        .all-btn .btn-icon { font-size:clamp(20px,2.5vw,26px); }
+        .all-btn-glow { position:absolute; width:90%; height:55px; background:conic-gradient(from 0deg,#FF6B35,#FFB347,#FF6B8A,#FFD93D,#FF6B35); border-radius:30px; filter:blur(16px); opacity:0.55; animation:rotateGlow 3s linear infinite; z-index:-1; pointer-events:none; }
+        @keyframes rotateGlow { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+        .love-footer { font-size:clamp(15px,2vw,20px); font-weight:800; color:#FF6B8A; text-align:center; background:rgba(255,255,255,0.55); padding:6px 24px; border-radius:20px; backdrop-filter:blur(6px); letter-spacing:1px; z-index:5; border:1px solid rgba(255,255,255,0.7); width:fit-content; margin:0 auto; }
+
+        /* 答题页面样式 (字体加大) */
+        .quiz-top-bar { display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:8px; flex-shrink:0; gap:10px; flex-wrap:wrap; }
+        .quiz-progress { background:rgba(255,243,224,0.9); padding:8px 20px; border-radius:20px; font-weight:800; font-size:clamp(18px, 2.5vw, 24px); border:2px solid #FFD0A0; color:#4A3728; backdrop-filter:blur(6px); }
+        .quiz-tag { background:rgba(255,248,240,0.9); padding:8px 20px; border-radius:20px; font-weight:700; font-size:clamp(16px, 2.2vw, 20px); color:#FF6B35; border:2px solid #FFE0C0; backdrop-filter:blur(6px); }
+        .speaker-zone { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:8px; flex-shrink:0; }
+        .speaker-btn,.slow-speaker-btn { width:clamp(70px, 9vw, 90px); height:clamp(70px, 9vw, 90px); border-radius:50%; font-size:clamp(36px, 5vw, 48px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:5px solid #FFB347; transition:0.2s; position:relative; background:radial-gradient(circle at 30% 30%,#FFF9F2,#FFE0B8); box-shadow:0 0 0 6px rgba(255,179,71,0.18),0 8px 20px rgba(255,140,50,0.3); -webkit-tap-highlight-color:transparent; }
+        .speaker-btn::after { content:"🐻"; position:absolute; top:-14px; right:-10px; font-size:clamp(24px, 3vw, 32px); animation:bearBounce 0.9s infinite; pointer-events:none; }
+        .slow-speaker-btn::after { content:"🐢"; position:absolute; bottom:-14px; right:-10px; font-size:clamp(24px, 3vw, 32px); animation:bearBounce 1.2s infinite; pointer-events:none; }
+        @keyframes bearBounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+        .speaker-btn:active,.slow-speaker-btn:active { transform:scale(0.84); }
+        .speaker-btn.speaking,.slow-speaker-btn.speaking { animation:speakerPulse 0.6s ease-in-out infinite; border-color:#FF6B35; box-shadow:0 0 0 10px rgba(255,107,53,0.25),0 8px 22px rgba(255,140,50,0.45); }
+        @keyframes speakerPulse { 0%,100%{box-shadow:0 0 0 6px rgba(255,179,71,0.18),0 8px 20px rgba(255,140,50,0.3);} 50%{box-shadow:0 0 0 16px rgba(255,140,50,0.12),0 10px 26px rgba(255,107,53,0.5);} }
+        .speaker-hint { text-align:center; font-size:clamp(14px, 1.8vw, 18px); color:#A1887F; margin-top:4px; font-weight:600; }
+
+        .option-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; flex:1 1 auto; margin-bottom:8px; min-height:0; }
+        .option-btn { background:rgba(255,255,255,0.86); backdrop-filter:blur(10px); border:4px solid #E8D5C0; border-radius:24px; padding:14px 6px; font-weight:800; text-align:center; cursor:pointer; transition:0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; box-shadow:0 5px 14px rgba(0,0,0,0.04); position:relative; -webkit-tap-highlight-color:transparent; min-height:80px; }
+        .option-btn:active { transform:scale(0.93); background:rgba(255,247,240,0.94); }
+        .doll-sticker { font-size:clamp(28px, 3.5vw, 38px); position:absolute; top:-16px; right:-10px; filter:drop-shadow(0 3px 5px rgba(0,0,0,0.15)); animation:dollWiggle 2.5s infinite; pointer-events:none; }
+        @keyframes dollWiggle { 0%,100%{transform:rotate(0);} 25%{transform:rotate(6deg);} 75%{transform:rotate(-6deg);} }
+        .pinyin-row { font-size:clamp(18px, 2.5vw, 24px); color:#C9A88C; font-weight:700; letter-spacing:2px; order:-1; }
+        .word-row { font-size:clamp(28px, 4.5vw, 40px); font-weight:900; line-height:1.2; }
+        .option-btn:nth-child(1) .word-row{color:#FF6B8A;} .option-btn:nth-child(2) .word-row{color:#4D96FF;} .option-btn:nth-child(3) .word-row{color:#6BCB77;} .option-btn:nth-child(4) .word-row{color:#FFB347;}
+        .option-btn.correct { border-color:#4CAF50 !important; background:#E8F5E9 !important; animation:popCorrect 0.5s; box-shadow:0 0 30px rgba(76,175,80,0.5); }
+        @keyframes popCorrect { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+        .option-btn.wrong { border-color:#EF5350 !important; background:#FFEBEE !important; animation:shakeWrong 0.5s; }
+        @keyframes shakeWrong { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
+
+        .bottom-nav { display:flex; gap:12px; justify-content:center; width:100%; flex-shrink:0; margin-top:6px; flex-wrap:wrap; }
+        .nav-btn { background:rgba(255,255,255,0.8); backdrop-filter:blur(8px); border:3px solid #E0D0C0; border-radius:24px; padding:10px 24px; font-weight:700; font-size:clamp(18px, 2.4vw, 22px); color:#4A3728; cursor:pointer; display:flex; align-items:center; gap:6px; transition:0.2s; box-shadow:0 3px 8px rgba(0,0,0,0.04); -webkit-tap-highlight-color:transparent; }
+        .nav-btn:active { background:#F5EDE5; transform:scale(0.93); }
+
+        .catalog-overlay,.custom-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,250,0.94); backdrop-filter:blur(12px); display:flex; flex-direction:column; z-index:20; border-radius:28px; padding:16px; }
+        .catalog-overlay.hidden,.custom-overlay.hidden { display:none !important; }
+        .catalog-header,.custom-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .catalog-close,.custom-close { font-size:26px; background:none; border:none; cursor:pointer; padding:6px 12px; }
+        .catalog-list,.custom-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+        .catalog-item { background:white; border:2px solid #F0E0D0; border-radius:12px; padding:8px 14px; font-weight:700; font-size:16px; cursor:pointer; display:flex; justify-content:space-between; }
+        .custom-cat-row { background:white; border:2px solid #E8D5E8; border-radius:14px; padding:10px 14px; display:flex; align-items:center; gap:10px; }
+        .custom-cat-input { width:80px; padding:8px 10px; border:2px solid #E0D0E0; border-radius:10px; font-size:16px; font-weight:700; text-align:center; color:#9B59B6; background:#FDF5FF; }
+        .custom-submit-btn,.custom-cancel-btn { font-weight:800; padding:10px 24px; border-radius:24px; font-size:18px; }
+        .custom-submit-btn { background:linear-gradient(135deg,#9B59B6,#FF6B8A); color:white; }
+        .custom-cancel-btn { background:white; color:#9B59B6; border:2px solid #E0D0E0; }
+
+        .reward-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,245,0.92); backdrop-filter:blur(10px); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; border-radius:28px; }
+        .reward-overlay.hidden { display:none !important; }
+        .reward-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; width:70%; }
+        .reward-btn { background:#FFF; border:4px solid #FFD0A0; border-radius:24px; padding:14px; font-size:20px; font-weight:800; cursor:pointer; }
+        .reward-picture { font-size:80px; animation:rewardBounce 0.6s; margin-bottom:6px; }
+        @keyframes rewardBounce { 0%{transform:scale(0.3);} 50%{transform:scale(1.2);} 100%{transform:scale(1);} }
+        .reward-next-btn { margin-top:14px; background:linear-gradient(135deg,#FF6B35,#FF8C42); color:white; font-weight:900; font-size:22px; padding:12px 30px; border-radius:28px; }
+
+        .popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); z-index:999; pointer-events:none; display:flex; flex-direction:column; align-items:center; transition:0.35s; }
+        .popup.show { transform:translate(-50%,-50%) scale(1); }
+        .popup-emoji { font-size:clamp(80px,12vw,120px); }
+        .popup-text { background:rgba(0,0,0,0.75); color:white; padding:12px 30px; border-radius:26px; font-size:24px; margin-top:8px; }
+        .fireworks { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:998; }
+        .fw-dot { position:absolute; border-radius:50%; animation:fw 1.2s ease-out forwards; }
+        @keyframes fw { 0%{transform:translate(0,0) scale(1); opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) scale(0); opacity:0;} }
+
+        @media (max-width:650px) {
+            .theme-grid { flex-wrap:wrap; }
+            .theme-card { width:calc(33.33% - 8px); min-width:70px; }
+            .option-btn { padding:10px 4px; min-height:65px; }
+            .word-row { font-size:clamp(22px, 5vw, 28px); }
+            .pinyin-row { font-size:clamp(14px, 2vw, 18px); }
+            .quiz-progress { font-size:clamp(15px, 2vw, 20px); }
+            .quiz-tag { font-size:clamp(13px, 1.8vw, 17px); }
+            .nav-btn { font-size:clamp(15px, 2vw, 18px); padding:8px 18px; }
+        }
+        @media (max-width:400px) {
+            .theme-card { width:calc(50% - 6px); }
+            .option-btn { min-height:55px; }
+            .word-row { font-size:20px; }
+            .pinyin-row { font-size:13px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sky-stickers">
+        <div class="floating">🌸</div><div class="floating">⭐</div><div class="floating">🍃</div>
+        <div class="floating">🐾</div><div class="floating">💫</div><div class="floating">🎈</div><div class="floating">🦴</div>
+    </div>
+    <audio id="bgmAudio" loop src="audio/小兔乖乖.mp3" preload="none"></audio>
+
+    <div class="app">
+        <div class="catalog-overlay hidden" id="catalogOverlay">
+            <div class="catalog-header"><span style="font-weight:900;font-size:22px;color:#FF6B35;">📖 题目目录</span><button class="catalog-close" id="catalogClose">✕</button></div>
+            <div class="catalog-list" id="catalogList"></div>
+        </div>
+        <div class="custom-overlay hidden" id="customOverlay">
+            <div class="custom-header"><span style="font-weight:900;font-size:22px;color:#9B59B6;">🎯 自定义选题</span><button class="custom-close" id="customClose">✕</button></div>
+            <div class="custom-list" id="customList"></div>
+            <div style="display:flex;gap:12px;justify-content:center;margin-top:12px;"><button class="custom-cancel-btn" id="customCancelBtn">取消</button><button class="custom-submit-btn" id="customSubmitBtn">🚀 开始答题</button></div>
+        </div>
+
+        <div class="page" id="homePage">
+            <div class="home-header">
+                <div class="critter-row"><span class="critter">🦊</span><span class="critter">🐼</span><span class="critter">🐰</span></div>
+                <div class="main-title">听听猜猜乐</div>
+                <div class="main-sub">🐣 选一个主题，开始冒险吧！</div>
+            </div>
+            <div class="theme-area">
+                <div class="theme-grid" id="themeGrid"></div>
+            </div>
+            <div class="bottom-zone">
+                <div class="control-bar">
+                    <button class="catalog-btn btn-base" id="homeCatalogBtn"><span class="btn-icon">📖</span> 目录</button>
+                    <button class="custom-btn btn-base" id="homeCustomBtn"><span class="btn-icon">🎯</span> 自定义选题</button>
+                    <button class="all-btn btn-base" id="allBtn" style="position:relative;"><div class="all-btn-glow"></div><span class="btn-icon">🚀</span> 全部题目大冒险</button>
+                </div>
+                <div class="love-footer">💖 爸爸妈妈爱乐乐 💖</div>
+            </div>
+        </div>
+
+        <div class="page hidden" id="quizPage">
+            <div class="quiz-top-bar">
+                <div class="quiz-progress">📋 <span id="quizNum">1/5</span></div>
+                <div class="quiz-tag" id="quizTheme">🌸 时间与天气</div>
+            </div>
+            <div class="speaker-zone">
+                <div class="speaker-btn" id="speakerBtn">🔊</div>
+                <div class="slow-speaker-btn" id="slowSpeakerBtn">🐢</div>
+            </div>
+            <div class="speaker-hint">👆 点喇叭听题目 / 点乌龟慢速播放</div>
+            <div class="option-grid" id="optionGrid"></div>
+            <div class="bottom-nav">
+                <button class="nav-btn" id="catalogBtnQuiz">📖 目录</button>
+                <button class="nav-btn" id="nextBtn">▶ 下一题</button>
+                <button class="nav-btn" id="homeBtn">🏠 返回</button>
+            </div>
+            <div class="reward-overlay hidden" id="rewardOverlay">
+                <div style="font-size:26px;font-weight:900;color:#FF6B35;text-align:center;">🎁 你很认真！<br>选一个奖励吧</div>
+                <div class="reward-grid" id="rewardGrid">
+                    <button class="reward-btn" data-reward="玩具">🧸 玩具</button>
+                    <button class="reward-btn" data-reward="动画片">📺 动画片</button>
+                    <button class="reward-btn" data-reward="零食">🍬 零食</button>
+                    <button class="reward-btn" data-reward="桌游">🎲 桌游</button>
+                </div>
+                <div id="rewardDisplay" class="hidden" style="text-align:center;">
+                    <div class="reward-picture" id="rewardPic"></div>
+                    <button class="reward-next-btn" id="rewardNextBtn">▶ 下一题</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="popup"><div class="popup-emoji" id="popupEmoji"></div><div class="popup-text" id="popupText"></div></div>
+    <div class="fireworks" id="fireworksContainer"></div>
+
+    <script>
+        (function() {
+            const QUESTIONS = [
+                { category:"时间与天气", text:"大家都穿着薄薄的裙子和短袖，小明还拿着冰淇淋边走边吃，请问今天是什么季节？", options:["春天","夏天","秋天","冬天"], pinyin:["chūn tiān","xià tiān","qiū tiān","dōng tiān"], correct:1, audio:"audio/A1.mp3" },
+                { category:"时间与天气", text:"小明穿上了厚厚的羽绒服，还戴了毛线帽子和手套，一说话嘴里冒出白气，请问现在是什么季节？", options:["春天","夏天","秋天","冬天"], pinyin:["chūn tiān","xià tiān","qiū tiān","dōng tiān"], correct:3, audio:"audio/A2.mp3" },
+                { category:"时间与天气", text:"树上的叶子变黄了，一片一片飘落在地上，风吹在身上凉凉的，请问现在是什么季节？", options:["春天","夏天","秋天","冬天"], pinyin:["chūn tiān","xià tiān","qiū tiān","dōng tiān"], correct:2, audio:"audio/A3.mp3" },
+                { category:"时间与天气", text:"小草从土里钻出来了，花儿开了，小鸟在树上叽叽喳喳叫，请问现在是什么季节？", options:["春天","夏天","秋天","冬天"], pinyin:["chūn tiān","xià tiān","qiū tiān","dōng tiān"], correct:0, audio:"audio/A4.mp3" },
+                { category:"时间与天气", text:"今天奇奇没有去上学，明天要去上学。请问今天是星期几？", options:["星期六","星期一","星期天","星期三"], pinyin:["xīng qī liù","xīng qī yī","xīng qī tiān","xīng qī sān"], correct:2, audio:"audio/A5.mp3" },
+                { category:"时间与天气", text:"外面下着大雨，还有闪电和打雷，小朋友们都待在屋子里不能出去玩，请问这是什么天气？", options:["晴天","阴天","下雨天","下雪天"], pinyin:["qíng tiān","yīn tiān","xià yǔ tiān","xià xuě tiān"], correct:2, audio:"audio/A6.mp3" },
+                { category:"时间与天气", text:"天亮了，小明穿好衣服在吃面包喝牛奶，请问现在是什么时间？", options:["早上","中午","下午","晚上"], pinyin:["zǎo shang","zhōng wǔ","xià wǔ","wǎn shang"], correct:0, audio:"audio/A7.mp3" },
+                { category:"时间与天气", text:"太阳高高挂在头顶，小朋友们在幼儿园里排队洗手准备吃饭，请问现在是什么时间？", options:["早上","中午","下午","晚上"], pinyin:["zǎo shang","zhōng wǔ","xià wǔ","wǎn shang"], correct:1, audio:"audio/A8.mp3" },
+                { category:"时间与天气", text:"天黑了，月亮和星星都出来了，云云在厕所洗澡，请问现在是什么时间？", options:["早上","中午","下午","晚上"], pinyin:["zǎo shang","zhōng wǔ","xià wǔ","wǎn shang"], correct:3, audio:"audio/A9.mp3" },
+                { category:"时间与天气", text:"桌子上摆着一个大蛋糕，上面插着蜡烛，大家拍着手在唱歌，请问今天是什么日子？", options:["过年","过生日","中秋节","儿童节"], pinyin:["guò nián","guò shēng rì","zhōng qiū jié","ér tóng jié"], correct:1, audio:"audio/A10.mp3" },
+                { category:"时间与天气", text:"外面鞭炮噼里啪啦响，小朋友们穿着新衣服收红包，请问今天是什么节日？", options:["过生日","中秋节","过年","端午节"], pinyin:["guò shēng rì","zhōng qiū jié","guò nián","duān wǔ jié"], correct:2, audio:"audio/A11.mp3" },
+                { category:"生活推理", text:"小明拿了一根香蕉，先把皮剥掉，然后放进嘴里吃，请问小明在吃什么？", options:["苹果","香蕉","橘子","西瓜"], pinyin:["píng guǒ","xiāng jiāo","jú zi","xī guā"], correct:1, audio:"audio/B1.mp3" },
+                { category:"生活推理", text:"这个东西是长方形的，上面有数字按键，妈妈用它给别人打电话，请问这是什么？", options:["电视机","冰箱","手机","电风扇"], pinyin:["diàn shì jī","bīng xiāng","shǒu jī","diàn fēng shàn"], correct:2, audio:"audio/B2.mp3" },
+                { category:"生活推理", text:"它有四个轮子，可以坐人，跑起来很快，加油的时候要去加油站，请问这是什么？", options:["自行车","汽车","飞机","轮船"], pinyin:["zì xíng chē","qì chē","fēi jī","lún chuán"], correct:1, audio:"audio/B3.mp3" },
+                { category:"生活推理", text:"它是白色的，放在冰箱里，喝起来凉凉的，小朋友们都喜欢喝，请问这是什么？", options:["果汁","热水","牛奶","可乐"], pinyin:["guǒ zhī","rè shuǐ","niú nǎi","kě lè"], correct:2, audio:"audio/B4.mp3" },
+                { category:"生活推理", text:"它有两只长长的耳朵，喜欢吃胡萝卜，请问这是什么动物？", options:["小猫","小狗","小兔子","小鸡"], pinyin:["xiǎo māo","xiǎo gǒu","xiǎo tù zi","xiǎo jī"], correct:2, audio:"audio/B5.mp3" },
+                { category:"生活推理", text:"请问刘歌的孩子是谁？", options:["妈妈","爷爷","外公","刘嘉乐"], pinyin:["mā ma","yé ye","wài gōng","liú jiā lè"], correct:3, audio:"audio/B6.mp3" },
+                { category:"生活推理", text:"请问爸爸是谁的孩子？", options:["爷爷","外公","乐乐","妈妈"], pinyin:["yé ye","wài gōng","lè le","mā ma"], correct:0, audio:"audio/B7.mp3" },
+                { category:"生活推理", text:"它挂在屋顶，晚上打开开关，家里就亮了。请问它是什么？", options:["窗帘","晾衣杆","灯","风扇"], pinyin:["chuāng lián","liàng yī gān","dēng","fēng shàn"], correct:2, audio:"audio/B8.mp3" },
+                { category:"感受与情绪", text:"小明摔了一跤，膝盖破了皮，他眼睛里含着泪水，请问小明现在什么心情？", options:["开心","生气","疼","困了"], pinyin:["kāi xīn","shēng qì","téng","kùn le"], correct:2, audio:"audio/C1.mp3" },
+                { category:"感受与情绪", text:"妈妈给小红买了一个新娃娃，小红抱着娃娃又蹦又跳，脸上笑开了花，请问小红现在是什么心情？", options:["难过","害怕","开心","生气"], pinyin:["nán guò","hài pà","kāi xīn","shēng qì"], correct:2, audio:"audio/C2.mp3" },
+                { category:"感受与情绪", text:"小明的玩具车被别的小朋友抢走了，请问小明会怎么办？", options:["给妈妈告状","吃水果","去电玩城玩","换一件干净衣服"], pinyin:["gěi mā ma gào zhuàng","chī shuǐ guǒ","qù diàn wán chéng wán","huàn yī jiàn gān jìng yī fu"], correct:0, audio:"audio/C3.mp3" },
+                { category:"地点", text:"这里有很多小朋友，有滑滑梯和秋千，老师带着大家一起做游戏，请问这是在哪里？", options:["超市","医院","幼儿园","家里"], pinyin:["chāo shì","yī yuàn","yòu ér yuán","jiā lǐ"], correct:2, audio:"audio/D1.mp3" },
+                { category:"地点", text:"这里有很多书，大家安安静静地看书，说话要很小声，请问这是在哪里？", options:["游乐场","图书馆","饭店","公园"], pinyin:["yóu lè chǎng","tú shū guǎn","fàn diàn","gōng yuán"], correct:1, audio:"audio/D2.mp3" },
+                { category:"计算", text:"爸爸有39岁，小明5岁了。请问爸爸比小明大几岁？", options:["34","26","38","16"], pinyin:[], correct:0, audio:"audio/E1.mp3" },
+                { category:"计算", text:"花花今年14岁了，请问花花现在在干嘛？", options:["花花在上小学","花花在上幼儿园","花花在上中学","花花在上大学"], pinyin:["huā huā zài shàng xiǎo xué","huā huā zài shàng yòu ér yuán","huā huā zài shàng zhōng xué","huā huā zài shàng dà xué"], correct:2, audio:"audio/E2.mp3" },
+                { category:"计算", text:"今天奇奇有38元钱，在超市买玩具花了12元。现在奇奇还有多少钱？", options:["23元","26元","40元","17元"], pinyin:["èr shí sān yuán","èr shí liù yuán","sì shí yuán","shí qī yuán"], correct:1, audio:"audio/E3.mp3" }
+            ];
+            const CATEGORIES = ["时间与天气","生活推理","感受与情绪","地点","计算"];
+            const ICONS = { "时间与天气":"🌸", "生活推理":"🍌", "感受与情绪":"😊", "地点":"🏫", "计算":"🔢" };
+            const DOLLS = ["🧸","🐰","🐶","🐱"];
+            const REWARD_PICS = { "玩具":"🧸", "动画片":"📺", "零食":"🍬", "桌游":"🎲" };
+            const correctAudios = ["audio/正确，乐乐你真棒.mp3","audio/答对了，乐乐真聪明.mp3","audio/正确,你真厉害.mp3"];
+            const wrongAudios = ["audio/不对，你再想一想.mp3","audio/错误，再听一次吧.mp3"];
+            const rewardAudio = "audio/乐乐你很棒很认真，你可以选择一个的奖励.mp3";
+
+            function getCatQ() { const r={}; CATEGORIES.forEach(c=>r[c]=[]); QUESTIONS.forEach(q=>r[q.category].push(q)); return r; }
+            let quizList=[], idx=0, answering=false, answered=false, themeLabel="", correctCount=0;
+            let ca=null, ctu=null, itp=false;
+            const bgm=document.getElementById('bgmAudio'); let bgmS=false;
+            const $=id=>document.getElementById(id);
+            const hp=$('homePage'), qp=$('quizPage'), tg=$('themeGrid'), ab=$('allBtn');
+            const hcb=$('homeCatalogBtn'), hcu=$('homeCustomBtn'), cbq=$('catalogBtnQuiz');
+            const qn=$('quizNum'), qt=$('quizTheme'), sb=$('speakerBtn'), ssb=$('slowSpeakerBtn'), og=$('optionGrid');
+            const nb=$('nextBtn'), hb=$('homeBtn'), po=$('popup'), pe=$('popupEmoji'), pt=$('popupText');
+            const fc=$('fireworksContainer'), ro=$('rewardOverlay'), rg=$('rewardGrid');
+            const rd=$('rewardDisplay'), rp=$('rewardPic'), rnb=$('rewardNextBtn');
+            const co=$('catalogOverlay'), cl=$('catalogList'), cc=$('catalogClose');
+            const cuo=$('customOverlay'), cul=$('customList'), cuc=$('customClose');
+            const csb=$('customSubmitBtn'), ccb=$('customCancelBtn');
+
+            function sca(){ if(ca){ca.pause();ca.currentTime=0;ca=null;} }
+            function stt(){ if(ctu||speechSynthesis.speaking)speechSynthesis.cancel(); ctu=null; itp=false; uss(false); }
+            function sas(){ sca(); stt(); }
+            function uss(s){ sb.classList.toggle('speaking',s); ssb.classList.toggle('speaking',s); }
+            function gcv(){ const v=speechSynthesis.getVoices(); return v.find(v=>v.lang==='zh-CN'&&v.localService)||v.find(v=>v.lang==='zh-CN')||v.find(v=>v.lang.startsWith('zh'))||null; }
+            function spkT(t,r=1,cb=null){ stt(); const u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=r; u.pitch=1.05; u.volume=0.9; const v=gcv(); if(v)u.voice=v; ctu=u; itp=true; uss(true); const ti=setTimeout(()=>{if(ctu===u){ote();if(cb)cb();}},Math.max(3000,t.length*80/r)+2000); u.onend=()=>{clearTimeout(ti);if(ctu===u){ote();if(cb)cb();}}; u.onerror=()=>{clearTimeout(ti);if(ctu===u){ote();if(cb)cb();}}; speechSynthesis.speak(u); }
+            function ote(){ ctu=null; itp=false; uss(false); }
+            function paf(s,r=1){ return new Promise((res,rej)=>{ sca(); const a=new Audio(s); a.playbackRate=r; ca=a; a.onended=()=>{if(ca===a)ca=null;res();}; a.onerror=()=>{if(ca===a)ca=null;rej();}; a.play().catch(e=>{if(ca===a)ca=null;rej(e);}); }); }
+            function pqa(a,t,r=1){ sas(); uss(true); paf(a,r).then(()=>uss(false)).catch(()=>spkT(t,r,()=>uss(false))); }
+            function pfa(a,t,r=1){ paf(a,r).catch(()=>spkT(t,r)); }
+            function sBGM(){ if(bgm&&!bgmS){ bgm.play().then(()=>{bgmS=true;}).catch(()=>{ const f=()=>{bgm.play().catch(()=>{});bgmS=true;document.body.removeEventListener('click',f);document.body.removeEventListener('touchstart',f);}; document.body.addEventListener('click',f,{once:true});document.body.addEventListener('touchstart',f,{once:true}); }); } }
+            function pBGM(){ if(bgm){bgm.pause();bgm.currentTime=0;} }
+            function shP(e,m,a,f){ pe.textContent=e; pt.textContent=m; po.classList.add('show'); setTimeout(()=>po.classList.remove('show'),1800); if(a)pfa(a,f||m); }
+            function spF(){ const c=['#FF6B8A','#FFB347','#FFD93D','#6BCB77','#4D96FF','#FF69B4','#9B59B6','#00BCD4']; for(let i=0;i<45;i++){ const d=document.createElement('div'); d.className='fw-dot'; d.style.left='50%'; d.style.top='45%'; d.style.width=(Math.random()*8+5)+'px'; d.style.height=d.style.width; d.style.background=c[Math.floor(Math.random()*c.length)]; const a=Math.random()*Math.PI*2, di=Math.random()*100+40; d.style.setProperty('--dx',Math.cos(a)*di+'px'); d.style.setProperty('--dy',Math.sin(a)*di+'px'); fc.appendChild(d); setTimeout(()=>d.remove(),1200); } }
+            function bT(){ tg.innerHTML=''; CATEGORIES.forEach(cat=>{ const cnt=QUESTIONS.filter(q=>q.category===cat).length; const card=document.createElement('div'); card.className='theme-card'; card.innerHTML=`<div class="theme-icon-circle">${ICONS[cat]}</div><div class="theme-name">${cat}</div><div class="theme-count">${cnt}道题</div>`; card.addEventListener('click',()=>sTh(cat)); tg.appendChild(card); }); }
+            function bC(){ cl.innerHTML=''; let cur='',ci=0; QUESTIONS.forEach((q,gi)=>{ if(q.category!==cur){cur=q.category;ci=0; const h=document.createElement('div');h.style='font-weight:900;color:#FF6B35;font-size:17px;margin-top:4px;';h.textContent=cur;cl.appendChild(h);} ci++; const it=document.createElement('div');it.className='catalog-item'; const st=q.text.length>18?q.text.substring(0,18)+'...':q.text; it.innerHTML=`<span><span class="catalog-num">${ci}.</span> ${st}</span><span class="catalog-cat">${q.category}</span>`; it.addEventListener('click',()=>{quizList=QUESTIONS.slice(gi);themeLabel="目录跳转";co.classList.add('hidden');sQ();}); cl.appendChild(it); }); }
+            function oC(){ bC(); co.classList.remove('hidden'); }
+            function prI(inp,max){ if(!inp||inp.trim()===''||inp.trim()==='全部')return Array.from({length:max},(_,i)=>i+1); const s=new Set(); inp.split(/[,，]/).forEach(p=>{ p=p.trim();if(!p)return; if(p.includes('-')){ const[st,en]=p.split('-'); let a=parseInt(st),b=parseInt(en); if(!isNaN(a)&&!isNaN(b)){ if(a>b)[a,b]=[b,a]; a=Math.max(1,a);b=Math.min(max,b); for(let i=a;i<=b;i++)s.add(i); } }else{ const n=parseInt(p); if(!isNaN(n)&&n>=1&&n<=max)s.add(n); } }); return [...s].sort((a,b)=>a-b); }
+            function bCuO(){ cul.innerHTML=''; const cq=getCatQ(); CATEGORIES.forEach(cat=>{ const qs=cq[cat];const t=qs.length; const r=document.createElement('div');r.className='custom-cat-row'; r.innerHTML=`<span style="font-size:28px;">${ICONS[cat]}</span><div style="flex:1"><div style="font-weight:800;font-size:16px;">${cat}</div><div style="font-size:13px;color:#A1887F;">共${t}题，1-${t}</div></div><input class="custom-cat-input" data-cat="${cat}" placeholder="1-${t}">`; cul.appendChild(r); }); }
+            function oCuO(){ bCuO(); cuo.classList.remove('hidden'); }
+            function sCu(){ const cq=getCatQ(); const inps=cul.querySelectorAll('.custom-cat-input'); let sel=[],has=false; inps.forEach(inp=>{ const cat=inp.dataset.cat; const qs=cq[cat]; const nums=prI(inp.value.trim(),qs.length); if(nums.length>0){has=true; nums.forEach(n=>sel.push(qs[n-1]));} }); if(!has){alert('请至少为一个分类选择题号范围！');return;} for(let i=sel.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sel[i],sel[j]]=[sel[j],sel[i]];} quizList=sel;themeLabel="自定义选题";cuo.classList.add('hidden');sQ(); }
+            function sTh(cat){ quizList=QUESTIONS.filter(q=>q.category===cat); for(let i=quizList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quizList[i],quizList[j]]=[quizList[j],quizList[i]];} themeLabel=cat;sQ(); }
+            function sA(){ quizList=[...QUESTIONS].sort(()=>Math.random()-0.5); themeLabel="全部混合"; sQ(); }
+            function sQ(){ if(quizList.length===0){alert('暂无题目');return;} idx=0;answered=false;answering=false;correctCount=0; sas(); hp.classList.add('hidden'); qp.classList.remove('hidden'); ro.classList.add('hidden'); pBGM(); rQ(); setTimeout(()=>pCQ(),400); }
+            function gPD(opt,py){ if(!opt||!py)return''; if(!/[\u4e00-\u9fff]/.test(opt))return''; if(/^[\u4e00-\u9fff]+$/.test(opt))return py; const parts=py.trim().split(/\s+/); return parts[parts.length-1]||py; }
+            function rQ(){ if(idx>=quizList.length){gH();return;} const q=quizList[idx]; qn.textContent=`${idx+1}/${quizList.length}`; qt.textContent=themeLabel; answered=false; answering=false; sas(); uss(false); og.innerHTML=''; q.options.forEach((opt,i)=>{ const btn=document.createElement('div'); btn.className='option-btn'; const py=gPD(opt,q.pinyin[i]||''); const pyH=py?`<span class="pinyin-row">${py}</span>`:''; btn.innerHTML=`<span class="doll-sticker">${DOLLS[i]}</span>${pyH}<span class="word-row">${opt}</span>`; btn.addEventListener('click',()=>hA(i,btn,q)); og.appendChild(btn); }); ro.classList.add('hidden'); }
+            function pCQ(r=1){ if(idx>=quizList.length)return; pqa(quizList[idx].audio,quizList[idx].text,r); }
+            function hA(i,btn,q){ if(answering||answered)return; answering=true; const correct=i===q.correct; const allBtns=og.querySelectorAll('.option-btn'); if(correct){ answered=true;btn.classList.add('correct');allBtns.forEach(b=>b.style.pointerEvents='none'); correctCount++; sas(); const af=correctAudios[Math.floor(Math.random()*correctAudios.length)]; shP('🎉','正确！',af); spF(); if(correctCount%3===0){ setTimeout(()=>{ro.classList.remove('hidden');rg.classList.remove('hidden');rd.classList.add('hidden');pfa(rewardAudio,"乐乐你很棒很认真，你可以选择一个奖励");},600); } answering=false; }else{ btn.classList.add('wrong'); const orig=btn.innerHTML; btn.innerHTML=orig+' 😢'; const wf=wrongAudios[Math.floor(Math.random()*wrongAudios.length)]; shP('🤔','再想一想',wf); setTimeout(()=>{ btn.classList.remove('wrong'); const py=gPD(q.options[i],q.pinyin[i]||''); const pyH=py?`<span class="pinyin-row">${py}</span>`:''; btn.innerHTML=`<span class="doll-sticker">${DOLLS[i]}</span>${pyH}<span class="word-row">${q.options[i]}</span>`; answering=false; },1500); } }
+            document.querySelectorAll('.reward-btn').forEach(b=>{b.addEventListener('click',function(){const r=this.dataset.reward;rg.classList.add('hidden');rp.textContent=REWARD_PICS[r];rd.classList.remove('hidden');spF();});});
+            rnb.addEventListener('click',()=>{ro.classList.add('hidden');nQ();});
+            function nQ(){ sas(); if(idx<quizList.length-1){idx++;rQ();setTimeout(()=>pCQ(),300);} else{alert('🎈 全部完成啦！你好厉害！');gH();} }
+            function gH(){ sas(); hp.classList.remove('hidden'); qp.classList.add('hidden'); ro.classList.add('hidden'); co.classList.add('hidden'); cuo.classList.add('hidden'); sBGM(); }
+            sb.addEventListener('click',()=>{if(quizList.length===0)return;sas();pCQ(1.0);});
+            ssb.addEventListener('click',()=>{if(quizList.length===0)return;sas();pCQ(0.65);});
+            nb.addEventListener('click',nQ); hb.addEventListener('click',gH); ab.addEventListener('click',sA);
+            hcb.addEventListener('click',oC); cbq.addEventListener('click',oC); cc.addEventListener('click',()=>co.classList.add('hidden'));
+            hcu.addEventListener('click',oCuO); cuc.addEventListener('click',()=>cuo.classList.add('hidden')); ccb.addEventListener('click',()=>cuo.classList.add('hidden')); csb.addEventListener('click',sCu);
+            window.addEventListener('beforeunload',sas);
+            document.addEventListener('visibilitychange',()=>{if(document.hidden)sas();});
+            window.addEventListener('load',()=>{bT(); if('speechSynthesis' in window){speechSynthesis.getVoices();} sBGM();});
+            if('speechSynthesis' in window) speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+        })();
+    </script>
+</body>
+</html>
